@@ -1,14 +1,11 @@
 # -*- coding: utf-8 -*-
 from datetime import datetime, timedelta
 import os, pytz, locale
-import paths
+from paths import localCalendar
 from functions import *
 
 tz = pytz.timezone("Europe/Stockholm")
 curTime = datetime.now(tz)
-basePath = paths.basePath
-logPath = paths.logPath
-localCal = paths.localCal
 
 # Here we create the post queue for twitter and mastodon. The queue comes in the form of an array, containing other arrays.
 # Each type of post ("events today", "events tomorrow", "events this week" etc) gets its own array, and the posts in that
@@ -28,14 +25,14 @@ def getEventInfo(title, eventTime, location, url):
 			eventInfo = title + "\nNär: " + timestamp + "\n" + url
 		return eventInfo
 
-# This function compared returned events to the local calendar. If events are found that are not in the calendar
+# This function compares returned events to the local calendar. If events are found that are not in the calendar
 # we make a "new events found" post
 def getNewEvents(eventData):
     # We first check if we actually have a local calendar. If not, we don't want to spam the feed with every event we found.
-    if (os.path.exists(localCal)):
+    if (os.path.exists(localCalendar)):
         localEvents = []
         # getting local events from the csv
-        with open(localCal, 'r') as cal:
+        with open(localCalendar, 'r') as cal:
             for line in cal:
                 # Not fully sure why I replace newlines here as there shouldn't be any in the lines, but if it ain't 
                 # broke I guess.
@@ -62,11 +59,51 @@ def getNewEvents(eventData):
                     if (len(posts) == 0):
                         posts.append("Nya evenemang har lagts till:")
                     posts.append(eventInfo)
-            if (len(posts) > 1):
+            if len(posts) > 5:
+                 writeLog("More than five new events found, assuming this is due to a local calendar error")
+            elif len(posts) > 1:
                 writeLog("Following new events found: \n" + "\n".join(posts))
                 return posts
             else:
                 writeLog("No new events in the calendar")
+
+# This function does the oposite of the above one, checking for events that are in the local calendar, but not the one
+# we've fetched, looking for events that have been cancelled.
+def getCancelledEvents(eventData):
+    # We first check if we actually have a local calendar. If not, there is no reason to keep running the function.
+    if not os.path.exists(localCalendar):
+        return
+    eventURLs = []
+    for event in eventData:
+        url = event["url"]
+        eventTime = event["eventTime"]
+        if eventTime > curTime:
+            eventURLs.append(url)
+    posts = []
+    # getting local events from the csv
+    with open(localCalendar, 'r') as cal:
+        for line in cal:
+            eventArr = line.replace('\n', "").split(',')
+            url = eventArr[0]
+            eventTime = datetime.strptime(eventArr[1], '%Y-%m-%d  %X%z')
+            title = eventArr[2].replace("&comma;", ",")
+            location = eventArr[3].replace("&comma;", ",")
+            # The event URL acts as the unique identifier for each event, as is almost always unique (with the
+            # exception of some recurring events) and most unlikely to change.
+            if url not in eventURLs and eventTime > curTime:
+                writeLog("Cancelled event: " + title)
+                eventInfo = getEventInfo(title, eventTime, location, url)
+                writeLog("Eventinfo: " + eventInfo)
+                # Here we add the opening post to the array
+                posts.append("INSTÄLLT:\n" + eventInfo)
+    if len(posts) > 3:
+            writeLog("More than three cancelled events found, assuming this is due to a local calendar error")
+    elif len(posts) > 0:
+        writeLog("Following cancelled events found: \n" + "\n".join(posts))
+        return posts
+    else:
+        writeLog("No cancelled events in the calendar")
+
 
 # Getting events for the coming week
 def comingWeek(eventData):
@@ -200,7 +237,7 @@ def create(eventData):
         queue.append(today(eventData))
         queue.append(tomorrow(eventData))
     queue.append(getNewEvents(eventData))
-    print(queue)
+    queue.append(getCancelledEvents(eventData))
     return queue
 
 

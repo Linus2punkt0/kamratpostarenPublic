@@ -11,10 +11,13 @@ def get():
     print("Gathering events from Radar")
     posts = []
     try: 
-        response = requests.get('https://radar.squat.net/api/1.2/search/events.json?fields=offline,url,title,date_time&keys=Sweden')
+        response = requests.get('https://radar.squat.net/api/1.2/search/events.json?fields=offline,url,title,date_time,event_status&keys=Sweden')
         json = response.json()["result"]
         for id in json:
             item = json[id]
+            status = item["event_status"]
+            if status == "cancelled":
+                continue
             url = item["url"]
             title = item["title"]
             uri = item["offline"][0]["uri"]
@@ -47,5 +50,3 @@ def get():
         print(e)
     print("Finished")
     return posts
-
-#print(get())

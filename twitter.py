@@ -2,14 +2,11 @@
 from twython import Twython
 from datetime import datetime
 import time, pytz
-import auth, paths
+import auth
 from functions import *
 
 tz = pytz.timezone("Europe/Stockholm")
 curTime = datetime.now(tz)
-basePath = paths.basePath
-logPath = paths.logPath
-localCal = paths.localCal
 
 # This is the function for posting to twitter. I use the library twython for this. There are probably better ones,
 # but this is the one I've always used and I don't feel like learning a new one.
@@ -60,3 +57,5 @@ def post(queue):
                     a = twitter.update_status(status=tweet, in_reply_to_status_id=a["id"], auto_populate_reply_metadata=True)
             writeLog("Reply from Twitter: " + str(a))
 
+
+#post(events.gather())

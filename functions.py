@@ -1,14 +1,12 @@
 from datetime import datetime, timedelta
 import os, pytz
-import paths;
+from paths import logPath
 
 # This file contains some base functionality that is reused across the application
 
 tz = pytz.timezone("Europe/Stockholm")
 curTime = datetime.now(tz)
 timeLimit = curTime - timedelta(hours = 1)
-basePath = paths.basePath
-logPath = paths.logPath
 
 # This function does as the name implies: it writes to a log file with the format kamrat_[date].log in the log folder.
 def writeLog(message):
@@ -23,6 +21,7 @@ def writeLog(message):
     dst = open(log, append_write)
     dst.write(message)
     dst.close()
+
 
 # This function is also pretty self explanatory, it returns true if it's the last day of the month, otherwise it returns false
 def isLastOfMonth():

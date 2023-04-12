@@ -1,7 +1,8 @@
 import gnistor, radar, dukop, gatorna
+from operator import itemgetter
 
-# This is simply the function where we put all events together. At some point I should add a function sorting the events
-# as at the moment the events from the different sources are just added one after the other.
+# This is simply the function where we put all events together. Sorting them here means the previous sorting was unnecessary, but I'm not gonna change it because I 
+# don't feel like it.
 
 def gather():
     radarEvents = radar.get()
@@ -9,4 +10,5 @@ def gather():
     gatornaEvents = gatorna.get()
     dukopEvents = dukop.get()
     events = radarEvents + gnistorEvents + gatornaEvents + dukopEvents
+    events = sorted(events, key=itemgetter('eventTime'))
     return events

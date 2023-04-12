@@ -43,3 +43,6 @@ def get():
         print("Collecting info from Dukop failed")
     print("Finished")
     return posts
+
+# Uncommenting this will allow us to run just this script and print the result.
+#print(get())

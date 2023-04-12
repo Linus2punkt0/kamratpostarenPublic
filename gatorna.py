@@ -34,3 +34,5 @@ def get():
          print("Collecting info from Gatorna failed")   
     print("Finished")
     return posts
+
+#print(get())

@@ -1,12 +1,13 @@
 from mastodon import Mastodon
 from functions import *
 import time
+import auth
 
 # The gathered posts are now posted to mastodon using the library mastodon.py
 
 mastodon = Mastodon(
-    access_token = 'token.secret',
-    api_base_url = 'https://mastodon.laserjesus.se/'
+    access_token = auth.MASTODON_TOKEN,
+    api_base_url = auth.MASTODON_INSTANCE
 )
 
 def post(queue):
@@ -35,12 +36,16 @@ def post(queue):
             time.sleep(waitTime * 60)
         sleep = True
         a = ""
+        # Single posts are put in the queue as strings, and will be posted on their own, while queues of multiple posts
+        # are put in an array, which will be itterated through and posted as a thread.
         if (isinstance(section, str)):
             a = mastodon.status_post(section)
             writeLog("Following toot found in current section: " + section)
         else:
             writeLog("Following toots found in current section: " + ", ".join(section))
             for toot in section:
+                # The response from mastodon is saved in a, when the next post is up, it will be posted as a response
+                # to the previous one.
                 if (len(a) == 0):
                     writeLog("Posting toot: " + toot)
                     a = mastodon.status_post(toot)
